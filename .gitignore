@@ -1,6 +1,5 @@
 obj
 bin
-lib
 project/cppia_bin
 test/ndlls/cpp
 test/ndlls/cpp64
