@@ -1440,12 +1440,13 @@ private:
         mCanStop = false;
 
         // Call the handler to announce the status.
+        //CS116 - Added column number to status
         int stackFrame = mStackFrames.size() - 1;
         StackFrame *frame = mStackFrames[stackFrame];
         g_eventNotificationHandler
             (mThreadNumber, THREAD_STOPPED, stackFrame,
              String(frame->className), String(frame->functionName),
-             String(frame->fileName), frame->lineNumber);
+             String(frame->fileName), frame->lineNumber, frame->columnNumber);
 
         // Wait until the debugger thread sets mWaiting to false and signals
         // the semaphore
@@ -1785,7 +1786,7 @@ public:
                {
                   // Check for class:function breakpoint if this is the
                   // first line of the stack frame
-                  if (frame->lineNumber == frame->firstLineNumber)
+                  if ((frame->lineNumber == frame->firstLineNumber))
                       breakpointNumber = breakpoints->FindClassFunctionBreakpoint(frame);
                }
 
@@ -2000,14 +2001,22 @@ private:
    //CS116 - We added columnNumber conditional.
    int FindFileLineBreakpoint(StackFrame *inFrame)
    {
-      printf("FindFileLineBreakpoint(), inFrame.columnNumber = %d\n", inFrame->columnNumber);
+      //printf("FindFileLineBreakpoint(), inFrame.columnNumber = %d\n", inFrame->columnNumber);
       for (int i = 0; i < mBreakpointCount; i++)
       {
-         Breakpoint &breakpoint = mBreakpoints[i];
-         if (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
-             (breakpoint.lineNumber == inFrame->lineNumber) && (breakpoint.columnNumber == inFrame->columnNumber) &&
-             !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) )
-            return breakpoint.number;
+        Breakpoint &breakpoint = mBreakpoints[i];
+        bool hasCol = true;
+        if(breakpoint.columnNumber == -1) hasCol = false;
+        //Breakpoint &breakpoint = mBreakpoints[i];
+        bool lineCondition = (breakpoint.isFileLine && breakpoint.hash==inFrame->fileHash &&
+            (breakpoint.lineNumber == inFrame->lineNumber) &&
+            !strcmp(breakpoint.fileOrClassName.c_str(),inFrame->fileName) );
+
+        if(hasCol && lineCondition && (breakpoint.columnNumber == inFrame->columnNumber)) {
+          return breakpoint.number;
+        }else if((!hasCol) && lineCondition) {
+          return breakpoint.number;
+        }
       }
       return -1;
    }
